@@ -70,8 +70,18 @@ end
 local function exec(cmd, cwd)
   local proc = process.start(cmd, cwd and { cwd = cwd } or nil)
   if not proc then return "" end
-  while proc:running() do coroutine.yield(0.1) end
-  return proc:read_stdout() or ""
+  local out = {}
+  while true do
+    local chunk = proc:read_stdout()
+    if chunk and chunk ~= "" then
+      table.insert(out, chunk)
+    elseif not proc:running() then
+      break
+    else
+      coroutine.yield(0.1)
+    end
+  end
+  return table.concat(out)
 end
 
 local SCMView = View:extend()

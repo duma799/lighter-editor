@@ -102,14 +102,21 @@ statusline.diag_warnings = 0
 local function update_git_branch()
   core.add_thread(function()
     while true do
+      local cwd = core.project_dir
       local proc = process.start(
         { "git", "rev-parse", "--abbrev-ref", "HEAD" },
-        { stdout = process.REDIRECT_PIPE, stderr = process.REDIRECT_PIPE }
+        { stdout = process.REDIRECT_PIPE, stderr = process.REDIRECT_PIPE, cwd = cwd }
       )
       if proc then
-        while proc:running() do coroutine.yield() end
-        local branch = proc:read_stdout(256)
-        if branch and proc:returncode() == 0 then
+        local out = {}
+        while true do
+          local chunk = proc:read_stdout()
+          if chunk and chunk ~= "" then table.insert(out, chunk)
+          elseif not proc:running() then break
+          else coroutine.yield(0.1) end
+        end
+        local branch = table.concat(out)
+        if branch and branch ~= "" and proc:returncode() == 0 then
           statusline.git_branch = branch:match("^%s*(.-)%s*$")
         else
           statusline.git_branch = nil

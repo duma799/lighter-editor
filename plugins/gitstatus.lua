@@ -99,30 +99,39 @@ local git = {
   deletes = 0,
 }
 
-local function exec(cmd)
-  local proc = process.start(cmd)
-  while proc:running() do
-    coroutine.yield(0.1)
+local function exec(cmd, cwd)
+  local proc = process.start(cmd, cwd and { cwd = cwd } or nil)
+  if not proc then return "" end
+  local out = {}
+  while true do
+    local chunk = proc:read_stdout()
+    if chunk and chunk ~= "" then
+      table.insert(out, chunk)
+    elseif not proc:running() then
+      break
+    else
+      coroutine.yield(0.1)
+    end
   end
-  return proc:read_stdout() or ""
+  return table.concat(out)
 end
 
 
 core.add_thread(function()
   while true do
-    if system.get_file_info(".git") then
-      git.branch = exec({"git", "rev-parse", "--abbrev-ref", "HEAD"}):match("[^\n]*")
+    if system.get_file_info(core.project_dir .. PATHSEP .. ".git") then
+      git.branch = exec({"git", "rev-parse", "--abbrev-ref", "HEAD"}, core.project_dir):match("[^\n]*")
 
       local inserts = 0
       local deletes = 0
 
-      local diff = exec({"git", "diff", "--numstat"})
+      local diff = exec({"git", "diff", "--numstat"}, core.project_dir)
       if
         config.plugins.gitstatus.recurse_submodules
         and
-        system.get_file_info(".gitmodules")
+        system.get_file_info(core.project_dir .. PATHSEP .. ".gitmodules")
       then
-        local diff2 = exec({"git", "submodule", "foreach", "git diff --numstat"})
+        local diff2 = exec({"git", "submodule", "foreach", "git diff --numstat"}, core.project_dir)
         diff = diff .. diff2
       end
 
