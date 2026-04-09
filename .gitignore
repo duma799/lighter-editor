@@ -1,0 +1,5 @@
+fonts/
+ws/
+session.lua
+lighter_history.lua
+lighter/native/fspicker.dylib
