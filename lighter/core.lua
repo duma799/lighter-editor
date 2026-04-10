@@ -20,7 +20,7 @@ function M.load_plugin(name, display_name)
 end
 
 function M.setup()
-  core.log("[Lighter] v%s starting...", M.version)
+  core.log_quiet("[Lighter] v%s starting...", M.version)
 
   M.load_plugin("colors." .. M.config.theme, "theme:" .. M.config.theme)
   M.load_plugin("lighter.modal", "modal-keybinds")
@@ -33,7 +33,7 @@ function M.setup()
 
   M.load_plugin("lighter.plugins.formatting", "formatting")
 
-  core.log("[Lighter] Setup complete. %d plugins loaded.", M.plugin_count())
+  core.log_quiet("[Lighter] Setup complete. %d plugins loaded.", M.plugin_count())
 end
 
 function M.plugin_count()

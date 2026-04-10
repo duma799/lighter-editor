@@ -17,7 +17,7 @@ function switcher.set_theme(name)
     if switcher.transparency_enabled then
       switcher.apply_transparency(lighter_config.transparency_alpha)
     end
-    core.log("[Lighter] Theme: %s", name)
+    core.log_quiet("[Lighter] Theme: %s", name)
   else
     core.error("[Lighter] Failed to load theme '%s': %s", name, err)
   end
@@ -45,10 +45,10 @@ end
 function switcher.toggle_transparency()
   if switcher.transparency_enabled then
     switcher.remove_transparency()
-    core.log("[Lighter] Transparency off")
+    core.log_quiet("[Lighter] Transparency off")
   else
     switcher.apply_transparency(lighter_config.transparency_alpha)
-    core.log("[Lighter] Transparency on")
+    core.log_quiet("[Lighter] Transparency on")
   end
 end
 

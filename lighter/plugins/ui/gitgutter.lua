@@ -43,7 +43,7 @@ local function exec(cmd, cwd)
 
   local err_str = table.concat(err)
   if err_str ~= "" then
-    core.log("gitgutter: %s", err_str)
+    core.log_quiet("gitgutter: %s", err_str)
   end
 
   return table.concat(out)
@@ -253,7 +253,7 @@ core.add_thread(function()
     end, debug.traceback)
 
     if not ok then
-      core.log("gitgutter: " .. tostring(err))
+      core.log_quiet("gitgutter: " .. tostring(err))
     end
   end
 end)

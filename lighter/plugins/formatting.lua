@@ -22,7 +22,7 @@ function formatting.format_doc(doc)
     local path = check:read("*l")
     check:close()
     if not path or path == "" then
-      core.log("[Lighter] Formatter '%s' not found for %s", fmt.cmd, lang)
+      core.log_quiet("[Lighter] Formatter '%s' not found for %s", fmt.cmd, lang)
       return
     end
   end
