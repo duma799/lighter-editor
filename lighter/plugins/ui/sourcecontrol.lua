@@ -359,6 +359,16 @@ treeview.update = function(self)
 end
 
 command.add(nil, {
+  ["lighter:sidebar-toggle"] = function()
+    if scm_view.visible then
+      scm_view.visible = false
+      tv_node:set_active_view(treeview)
+      treeview.visible = true
+    else
+      command.perform("treeview:toggle")
+    end
+  end,
+
   ["lighter:git-status"] = function()
     if scm_view.visible then
       scm_view.visible = false

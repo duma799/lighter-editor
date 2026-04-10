@@ -49,5 +49,5 @@ local lighter = require "lighter.core"
 lighter.setup()
 
 local keymap = require "core.keymap"
-keymap.add_direct { ["ctrl+n"] = "treeview:toggle" }
+keymap.add_direct { ["ctrl+n"] = "lighter:sidebar-toggle" }
 keymap.add_direct { ["ctrl+g"] = "lighter:git-status" }
