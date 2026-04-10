@@ -1,7 +1,7 @@
-// LunarXL native folder picker
+// Lighter native folder picker
 // Calls NSOpenPanel directly — no subprocess, no AppleScript.
 // Compile with: make (see Makefile)
-// Lua API: require "lunaxl.native.fspicker"
+// Lua API: require "lighter.native.fspicker"
 //   fspicker.pick_folder()  -> string path | nil (if cancelled)
 
 #import <AppKit/AppKit.h>
@@ -49,9 +49,9 @@ static const luaL_Reg lib[] = {
     { NULL, NULL }
 };
 
-// Module init — called by require "lunaxl.native.fspicker"
+// Module init — called by require "lighter.native.fspicker"
 // Lua converts dots to underscores for the C symbol name.
-int luaopen_lunaxl_native_fspicker(lua_State *L) {
+int luaopen_lighter_native_fspicker(lua_State *L) {
     luaL_newlib(L, lib);
     return 1;
 }
