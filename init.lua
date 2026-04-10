@@ -22,6 +22,7 @@ config.mouse_wheel_scroll = 20 * SCALE
 
 if not config.plugins then config.plugins = {} end
 config.plugins.toolbarview = false
+config.plugins.workspace   = false
 
 config.plugins.ai = {
   gemini_api_key = ""
