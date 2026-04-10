@@ -249,8 +249,6 @@ local function get_treeview()
   if ok then return tv end
 end
 
--- Globally prevent core:open-log from ever showing the log view automatically.
--- Users can still read log output in the statusbar.
 if not picker._intercept_installed then
   local orig_perform = command.perform
   command.perform = function(cmd, ...)
@@ -286,7 +284,6 @@ local function open_project(path)
   end)
 end
 
--- Hook into RootView.draw for rendering the overlay
 local orig_rv_draw = RootView.draw
 RootView.draw = function(self)
   orig_rv_draw(self)
@@ -299,9 +296,6 @@ RootView.draw = function(self)
   end
 end
 
--- Hook into core.on_event to intercept ALL mouse events when overlay is active.
--- This is more robust than hooking RootView.on_mouse_pressed because it
--- bypasses the entire RootView dispatch chain.
 local orig_on_event = core.on_event
 core.on_event = function(type, ...)
   if picker._overlay then
@@ -323,31 +317,31 @@ core.on_event = function(type, ...)
       return
     end
   end
-  return orig_on_event(type, ...)
+  return orig_on_event and orig_on_event(type, ...)
 end
 
 function picker.show()
   local tv = get_treeview()
   if tv then tv.visible = false end
 
-  -- aggressively hide logs globally across all split nodes
   local ok, logview = pcall(require, "core.logview")
-  if ok and logview then
-    local root = core.root_view.root_node
-    for _, view in ipairs(root:get_children()) do
-      if view:is(logview) then
-        local node = root:get_node_for_view(view)
-        if node then
-          node:close_view(root, view)
+  if ok and logview and core.root_view then
+    pcall(function()
+      local root = core.root_view.root_node
+      for _, view in ipairs(root:get_children()) do
+        if view:is(logview) then
+          local node = root:get_node_for_view(view)
+          if node then node:close_view(root, view) end
         end
       end
-    end
+    end)
   end
 
   picker._overlay = PickerView(function(path)
     if picker._overlay then picker._overlay.choosing = true end
     open_project(path)
   end)
+  core.redraw = true
   core.set_active_view(picker._overlay)
 end
 
