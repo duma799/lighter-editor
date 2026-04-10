@@ -7,11 +7,12 @@ local View      = require "core.view"
 local RootView  = require "core.rootview"
 local EmptyView = require "core.emptyview"
 
-local overlay = nil
+local picker = {}
+picker._overlay = nil
 
 local orig_empty_draw = EmptyView.draw
 EmptyView.draw = function(self)
-  if overlay then
+  if picker._overlay then
     self:draw_background(style.background)
   else
     orig_empty_draw(self)
@@ -55,6 +56,7 @@ local BTN_H   = 40
 local ROW_H   = 46
 local PAD     = 12
 local LABEL_H = 30
+local CARD_W  = 360
 
 function PickerView:new(on_select)
   PickerView.super.new(self)
@@ -66,30 +68,6 @@ function PickerView:new(on_select)
 end
 
 function PickerView:get_name() return "Open Project" end
-
-function PickerView:btn_y()
-  return self.position.y + math.floor(self.size.y * 0.28)
-end
-
-function PickerView:btn_rect()
-  local cx = self.position.x + self.size.x / 2
-  local by = self:btn_y()
-  return cx - BTN_W / 2, by, BTN_W, BTN_H
-end
-
-function PickerView:history_start_y()
-  local _, by, _, bh = self:btn_rect()
-  return by + bh + 32
-end
-
-function PickerView:row_rect(i)
-  local rw   = math.min(500, self.size.x - PAD * 4)
-  local rx   = self.position.x + (self.size.x - rw) / 2
-  local ry   = self:history_start_y() + (i - 1) * ROW_H
-  return rx, ry, rw, ROW_H
-end
-
-local CARD_W = 360
 
 function PickerView:card_rect()
   local sw, sh = self.size.x, self.size.y
@@ -266,11 +244,22 @@ end, {
 
 keymap.add { ["return"] = "picker:open-dialog" }
 
-local picker = {}
-
 local function get_treeview()
   local ok, tv = pcall(require, "plugins.treeview")
   if ok then return tv end
+end
+
+-- Globally prevent core:open-log from ever showing the log view automatically.
+-- Users can still read log output in the statusbar.
+if not picker._intercept_installed then
+  local orig_perform = command.perform
+  command.perform = function(cmd, ...)
+    if cmd == "core:open-log" then
+      return
+    end
+    return orig_perform(cmd, ...)
+  end
+  picker._intercept_installed = true
 end
 
 local function open_project(path)
@@ -286,60 +275,92 @@ local function open_project(path)
   push_history(path)
   core.add_thread(function()
     coroutine.yield(0)
+
+    if path ~= core.project_dir then
+      pcall(function() core.open_folder_project(path) end)
+    end
+    
     local tv = get_treeview()
     if tv then tv.visible = true; tv.cache = {} end
-    core.project_directories = {}
-    core.open_folder_project(path)
+    picker.hide()
   end)
 end
 
+-- Hook into RootView.draw for rendering the overlay
 local orig_rv_draw = RootView.draw
 RootView.draw = function(self)
   orig_rv_draw(self)
-  if overlay then
-    overlay.position.x = self.position.x
-    overlay.position.y = self.position.y
-    overlay.size.x     = self.size.x
-    overlay.size.y     = self.size.y
-    overlay:draw()
+  if picker._overlay then
+    picker._overlay.position.x = self.position.x
+    picker._overlay.position.y = self.position.y
+    picker._overlay.size.x     = self.size.x
+    picker._overlay.size.y     = self.size.y
+    picker._overlay:draw()
   end
 end
 
-local orig_rv_mouse_moved = RootView.on_mouse_moved
-RootView.on_mouse_moved = function(self, x, y, dx, dy)
-  if overlay then overlay:on_mouse_moved(x, y); return end
-  orig_rv_mouse_moved(self, x, y, dx, dy)
-end
-
-local orig_rv_mouse_pressed = RootView.on_mouse_pressed
-RootView.on_mouse_pressed = function(self, button, x, y, clicks)
-  if overlay then overlay:on_mouse_pressed(button, x, y, clicks); return end
-  orig_rv_mouse_pressed(self, button, x, y, clicks)
+-- Hook into core.on_event to intercept ALL mouse events when overlay is active.
+-- This is more robust than hooking RootView.on_mouse_pressed because it
+-- bypasses the entire RootView dispatch chain.
+local orig_on_event = core.on_event
+core.on_event = function(type, ...)
+  if picker._overlay then
+    if type == "mousemoved" then
+      local x, y = ...
+      picker._overlay:on_mouse_moved(x, y)
+      return
+    elseif type == "mousepressed" then
+      local button, x, y, clicks = ...
+      picker._overlay:on_mouse_pressed(button, x, y, clicks)
+      return true
+    elseif type == "keypressed" then
+      local k = ...
+      if k == "escape" then
+        picker.hide()
+        return true
+      end
+    elseif type == "mousereleased" or type == "mousewheel" then
+      return
+    end
+  end
+  return orig_on_event(type, ...)
 end
 
 function picker.show()
-  core.root_view:close_all_docviews()
-  local node = core.root_view:get_primary_node()
-  if node then
-    for i = #node.views, 1, -1 do
-      node:close_view(core.root_view.root_node, node.views[i])
-    end
-  end
   local tv = get_treeview()
   if tv then tv.visible = false end
 
-  overlay = PickerView(function(path)
-    overlay = nil
+  -- aggressively hide logs globally across all split nodes
+  local ok, logview = pcall(require, "core.logview")
+  if ok and logview then
+    local root = core.root_view.root_node
+    for _, view in ipairs(root:get_children()) do
+      if view:is(logview) then
+        local node = root:get_node_for_view(view)
+        if node then
+          node:close_view(root, view)
+        end
+      end
+    end
+  end
+
+  picker._overlay = PickerView(function(path)
+    if picker._overlay then picker._overlay.choosing = true end
     open_project(path)
   end)
-  core.set_active_view(overlay)
+  core.set_active_view(picker._overlay)
 end
 
 function picker.hide()
-  overlay = nil
+  picker._overlay = nil
+  local tv = get_treeview()
+  if tv then tv.visible = true end
 end
 
-command.add(nil, { ["lighter:open-project"] = picker.show })
+command.add(nil, {
+  ["lighter:open-project"] = picker.show,
+  ["lighter:close-project-picker"] = picker.hide,
+})
 keymap.add_direct { ["ctrl+o"] = "lighter:open-project" }
 
 picker.show()
