@@ -60,10 +60,4 @@ config.lsp_servers = {
   bash       = { cmd = "bash-language-server",         args = { "start" } },
 }
 
-config.ai = {
-  enabled = true,
-  provider = "claude-code",
-  panel_width_ratio = 0.25,
-}
-
 return config

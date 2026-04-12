@@ -24,10 +24,6 @@ if not config.plugins then config.plugins = {} end
 config.plugins.toolbarview = false
 config.plugins.workspace   = false
 
-config.plugins.ai = {
-  gemini_api_key = ""
-}
-
 local font_mono = userdir .. "/fonts/MesloLGSNerdFontMono-Regular.ttf"
 local font_ui   = userdir .. "/fonts/MesloLGSNerdFont-Regular.ttf"
 local font_opts = { antialiasing = "subpixel", hinting = "slight" }

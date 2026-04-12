@@ -139,14 +139,6 @@ local leader_map = {
     ["s"] = "lighter:git-status",
   },
 
-  ["a"] = {
-    ["a"] = "ai:toggle",
-    ["q"] = "ai:ask",
-    ["e"] = "ai:explain",
-    ["k"] = "ai:ask-with-context",
-    ["c"] = "ai:clear",
-  },
-
   ["e"]     = "treeview:toggle",
 
   ["s"] = {
