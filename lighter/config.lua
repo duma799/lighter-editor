@@ -7,7 +7,7 @@ config.tab_type = "soft"
 config.line_height = 1.2
 config.scroll_past_end = true
 
-config.theme = "tokyonight"
+config.theme = "token"
 config.transparency = false
 config.transparency_alpha = 0.95
 

@@ -51,3 +51,41 @@ lighter.setup()
 local keymap = require "core.keymap"
 keymap.add_direct { ["ctrl+n"] = "lighter:sidebar-toggle" }
 keymap.add_direct { ["ctrl+g"] = "lighter:git-status" }
+
+-- Horizontal scroll: only show/allow when lines overflow, with dead zone
+local DocView = require "core.docview"
+
+DocView.get_h_scrollable_size = function(self)
+  if not self.doc then return 0 end
+  local change_id = self.doc:get_change_id()
+  if self._hscroll_cache_id == change_id then
+    return self._hscroll_cache_w
+  end
+  local font = self:get_font()
+  local _, indent_size = self.doc:get_indent_info()
+  font:set_tab_size(indent_size)
+  local max_w = 0
+  for i = 1, math.min(#self.doc.lines, 10000) do
+    local line = self.doc.lines[i]
+    if line then
+      local w = font:get_width(line:sub(1, -2))
+      if w > max_w then max_w = w end
+    end
+  end
+  local total = self:get_gutter_width() + max_w + style.padding.x * 2
+  self._hscroll_cache_id = change_id
+  self._hscroll_cache_w = total
+  return total
+end
+
+-- Dead zone: horizontal scroll only fires when |dx| > 2.5 * |dy|
+local _orig_on_event = core.on_event
+core.on_event = function(type, ...)
+  if type == "mousewheel" then
+    local dy, dx = ...
+    if dx and dx ~= 0 and math.abs(dx) <= math.abs(dy or 0) * 2.5 then
+      return _orig_on_event(type, dy, 0)
+    end
+  end
+  return _orig_on_event(type, ...)
+end

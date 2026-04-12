@@ -140,9 +140,11 @@ local leader_map = {
   },
 
   ["a"] = {
-    ["a"] = "lighter:ai-toggle",
-    ["e"] = "lighter:ai-explain",
-    ["r"] = "lighter:ai-refactor",
+    ["a"] = "ai:toggle",
+    ["q"] = "ai:ask",
+    ["e"] = "ai:explain",
+    ["k"] = "ai:ask-with-context",
+    ["c"] = "ai:clear",
   },
 
   ["e"]     = "treeview:toggle",
@@ -162,6 +164,7 @@ local leader_map = {
     ["g"] = "lighter:theme-gruvbox",
     ["t"] = "lighter:theme-tokyonight",
     ["n"] = "lighter:theme-nightfox",
+    ["f"] = "lighter:theme-token",
   },
 
   ["x"] = {

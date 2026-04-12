@@ -62,11 +62,14 @@ command.add(nil, {
   ["lighter:theme-nightfox"] = function()
     switcher.set_theme("nightfox")
   end,
+  ["lighter:theme-token"] = function()
+    switcher.set_theme("token")
+  end,
   ["lighter:theme-toggle-transparency"] = function()
     switcher.toggle_transparency()
   end,
   ["lighter:theme-select"] = function()
-    local themes = { "tokyonight", "gruvbox", "nightfox" }
+    local themes = { "tokyonight", "gruvbox", "nightfox", "token" }
     core.command_view:enter("Select Theme", {
       submit = function(text, item)
         switcher.set_theme(item and item.text or text)
