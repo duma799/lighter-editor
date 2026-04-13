@@ -1,7 +1,7 @@
 local config = {}
 
-config.font_size = 16
-config.font_file = "MesloLGSNerdFontMono-Regular.ttf"
+config.font_size = 20
+config.font_file = "JetBrainsMonoNerdFontMono-Bold.ttf"
 config.indent_size = 4
 config.tab_type = "soft"
 config.line_height = 1.2

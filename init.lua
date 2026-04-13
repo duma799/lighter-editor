@@ -24,14 +24,14 @@ if not config.plugins then config.plugins = {} end
 config.plugins.toolbarview = false
 config.plugins.workspace   = false
 
-local font_mono = userdir .. "/fonts/MesloLGSNerdFontMono-Regular.ttf"
+local font_mono = userdir .. "/fonts/JetBrainsMonoNerdFontMono-Bold.ttf"
 local font_ui   = userdir .. "/fonts/MesloLGSNerdFont-Regular.ttf"
 local font_opts = { antialiasing = "subpixel", hinting = "slight" }
 
 local f = io.open(font_mono, "r")
 if f then
   f:close()
-  style.code_font = renderer.font.load(font_mono, 16 * SCALE, font_opts)
+  style.code_font = renderer.font.load(font_mono, 20 * SCALE, font_opts)
 end
 f = io.open(font_ui, "r")
 if f then
