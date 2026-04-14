@@ -47,8 +47,8 @@ lighter.setup()
 local keymap = require "core.keymap"
 keymap.add_direct { ["ctrl+n"] = "lighter:sidebar-toggle" }
 keymap.add_direct { ["ctrl+g"] = "lighter:git-status" }
+keymap.add_direct { ["ctrl+/"] = "lighter:terminal-toggle" }
 
--- Horizontal scroll: only show/allow when lines overflow, with dead zone
 local DocView = require "core.docview"
 
 DocView.get_h_scrollable_size = function(self)
@@ -74,7 +74,6 @@ DocView.get_h_scrollable_size = function(self)
   return total
 end
 
--- Dead zone: horizontal scroll only fires when |dx| > 2.5 * |dy|
 local _orig_on_event = core.on_event
 core.on_event = function(type, ...)
   if type == "mousewheel" then
