@@ -34,16 +34,42 @@ if f then
   f:close()
   style.code_font = renderer.font.load(font_mono, 20 * SCALE, font_opts)
 end
+local font_ui_bold = userdir .. "/fonts/MesloLGSNerdFont-Bold.ttf"
 f = io.open(font_ui, "r")
 if f then
   f:close()
   style.font = renderer.font.load(font_ui, 14 * SCALE, font_opts)
+  style.sidebar_font = renderer.font.load(font_ui, 12 * SCALE, font_opts)
+end
+f = io.open(font_ui_bold, "r")
+if f then
+  f:close()
+  style.sidebar_bold_font = renderer.font.load(font_ui_bold, 12 * SCALE, font_opts)
 end
 
 core.recent_projects = {}
 
 local lighter = require "lighter.core"
 lighter.setup()
+
+local treeview = require "plugins.treeview"
+
+function treeview:get_item_text(item, active, hovered)
+  local text = item.name
+  local font = item.type == "dir"
+    and (style.sidebar_bold_font or style.font)
+    or  (style.sidebar_font or style.font)
+  local color = style.text
+  if active or hovered then
+    color = style.accent
+  end
+  return text, font, color
+end
+
+function treeview:get_item_height()
+  local font = style.sidebar_bold_font or style.sidebar_font or style.font
+  return font:get_height() + style.padding.y
+end
 
 local keymap = require "core.keymap"
 keymap.add_direct { ["ctrl+n"] = "lighter:sidebar-toggle" }
