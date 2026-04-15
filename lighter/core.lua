@@ -30,6 +30,7 @@ function M.setup()
   M.load_plugin("lighter.plugins.project_picker", "project-picker")
   M.load_plugin("lighter.plugins.ui.sourcecontrol", "source-control")
   M.load_plugin("lighter.plugins.ui.gitgutter",    "git-gutter")
+  M.load_plugin("lighter.plugins.ui.tabs",         "tabs")
 
   M.load_plugin("lighter.plugins.formatting", "formatting")
 
