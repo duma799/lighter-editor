@@ -15,7 +15,19 @@ modal.prev_mode = "normal"
 modal.chord = { active = false, keys = {}, timer = 0 }
 local CHORD_TIMEOUT = 1.5
 
-local original_docview_draw_caret = nil
+local original_docview_draw_caret = DocView.draw_caret
+
+function DocView:draw_caret(x, y)
+  if modal.mode == "normal" or modal.mode == "visual" then
+    local lh = self:get_line_height()
+    local font = self:get_font()
+    local ch_w = font:get_width(" ")
+    local color = { style.caret[1], style.caret[2], style.caret[3], 180 }
+    renderer.draw_rect(x, y, ch_w, lh, color)
+  else
+    original_docview_draw_caret(self, x, y)
+  end
+end
 
 function modal.set_mode(mode)
   modal.prev_mode = modal.mode
