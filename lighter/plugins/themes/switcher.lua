@@ -4,9 +4,19 @@ local style = require "core.style"
 local common = require "core.common"
 local lighter_config = require "lighter.config"
 
+local titlebar_ok, titlebar = pcall(require, "lighter.native.titlebar")
+
 local switcher = {}
 switcher.current_theme = lighter_config.theme
 switcher.transparency_enabled = false
+
+function switcher.sync_titlebar()
+  if not titlebar_ok then return end
+  local bg = style.background2 or style.background
+  if bg and type(bg) == "table" and #bg >= 3 then
+    pcall(titlebar.set_color, bg[1], bg[2], bg[3])
+  end
+end
 
 function switcher.set_theme(name)
   local ok, err = pcall(function()
@@ -17,6 +27,7 @@ function switcher.set_theme(name)
     if switcher.transparency_enabled then
       switcher.apply_transparency(lighter_config.transparency_alpha)
     end
+    switcher.sync_titlebar()
     core.log_quiet("[Lighter] Theme: %s", name)
   else
     core.error("[Lighter] Failed to load theme '%s': %s", name, err)
@@ -89,5 +100,12 @@ command.add(nil, {
     })
   end,
 })
+
+core.add_thread(function()
+  for _ = 1, 5 do
+    coroutine.yield(0.2)
+    switcher.sync_titlebar()
+  end
+end)
 
 return switcher
