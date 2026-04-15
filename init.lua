@@ -23,6 +23,7 @@ config.mouse_wheel_scroll = 20 * SCALE
 if not config.plugins then config.plugins = {} end
 config.plugins.toolbarview = false
 config.plugins.workspace   = false
+config.skip_plugins_version = true
 
 local font_mono = userdir .. "/fonts/JetBrainsMonoNerdFontMono-Bold.ttf"
 local font_ui   = userdir .. "/fonts/MesloLGSNerdFont-Regular.ttf"
