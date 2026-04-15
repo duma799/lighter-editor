@@ -1,23 +1,22 @@
 LUA_INC = /opt/homebrew/Cellar/lua@5.4/5.4.8/include/lua5.4
 CC      = clang
-SRC     = fspicker.m
-OUT     = fspicker.dylib
 
 CFLAGS  = -O2 -Wall -shared -fPIC \
           -undefined dynamic_lookup \
-          -fobjc-arc \
-          -I$(LUA_INC)
+          -fobjc-arc
 
 LDFLAGS = -framework AppKit \
           -framework Foundation
 
+TARGETS = fspicker.dylib titlebar.dylib
+
 .PHONY: all clean
 
-all: $(OUT)
-	@echo "Built $(OUT)"
+all: $(TARGETS)
+	@echo "Built: $(TARGETS)"
 
-$(OUT): $(SRC)
+%.dylib: %.m
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 clean:
-	rm -f $(OUT)
+	rm -f $(TARGETS)

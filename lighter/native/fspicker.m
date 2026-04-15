@@ -1,15 +1,8 @@
-// Lighter native folder picker
-// Calls NSOpenPanel directly — no subprocess, no AppleScript.
-// Compile with: make (see Makefile)
-// Lua API: require "lighter.native.fspicker"
-//   fspicker.pick_folder()  -> string path | nil (if cancelled)
-
 #import <AppKit/AppKit.h>
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
 
-// pick_folder() -> string or nil
+#define LITE_XL_PLUGIN_ENTRYPOINT
+#include "lite_xl_plugin_api.h"
+
 static int l_pick_folder(lua_State *L) {
     @autoreleasepool {
         __block NSString *chosen = nil;
@@ -49,9 +42,8 @@ static const luaL_Reg lib[] = {
     { NULL, NULL }
 };
 
-// Module init — called by require "lighter.native.fspicker"
-// Lua converts dots to underscores for the C symbol name.
-int luaopen_lighter_native_fspicker(lua_State *L) {
+int luaopen_lite_xl_fspicker(lua_State *L, void *XL) {
+    lite_xl_plugin_init(XL);
     luaL_newlib(L, lib);
     return 1;
 }
