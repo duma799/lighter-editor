@@ -50,7 +50,16 @@ end
 local normal_map = {
   ["i"]     = function() modal.set_mode("insert") end,
   ["a"]     = function()
-    command.perform("doc:move-to-next-char")
+    local av = core.active_view
+    if av and av.doc then
+      local line, col = av.doc:get_selection()
+      local text = av.doc.lines[line]
+      local end_col = #(text or "")
+      if text and text:sub(-1) == "\n" then end_col = end_col - 1 end
+      if col < end_col then
+        command.perform("doc:move-to-next-char")
+      end
+    end
     modal.set_mode("insert")
   end,
   ["A"]     = function()
