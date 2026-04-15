@@ -178,6 +178,7 @@ local leader_map = {
     ["t"] = "lighter:theme-tokyonight",
     ["n"] = "lighter:theme-nightfox",
     ["f"] = "lighter:theme-token",
+    ["u"] = "lighter:theme-ultraviolet",
   },
 
   ["x"] = {
