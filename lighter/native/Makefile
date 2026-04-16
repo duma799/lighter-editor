@@ -8,7 +8,7 @@ CFLAGS  = -O2 -Wall -shared -fPIC \
 LDFLAGS = -framework AppKit \
           -framework Foundation
 
-TARGETS = fspicker.dylib titlebar.dylib
+TARGETS = fspicker.dylib titlebar.dylib pty.dylib
 
 .PHONY: all clean
 
@@ -17,6 +17,9 @@ all: $(TARGETS)
 
 %.dylib: %.m
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+pty.dylib: pty.c
+	$(CC) -O2 -Wall -shared -fPIC -undefined dynamic_lookup -lutil -o $@ $<
 
 clean:
 	rm -f $(TARGETS)
