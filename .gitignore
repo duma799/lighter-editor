@@ -4,3 +4,4 @@ session.lua
 lighter_history.lua
 lighter/native/*.dylib
 CLAUDE.md
+plans.md
