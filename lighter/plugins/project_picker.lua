@@ -252,7 +252,7 @@ end
 if not picker._intercept_installed then
   local orig_perform = command.perform
   command.perform = function(cmd, ...)
-    if cmd == "core:open-log" then
+    if cmd == "core:open-log" and picker._overlay then
       return
     end
     return orig_perform(cmd, ...)
