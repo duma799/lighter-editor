@@ -37,7 +37,7 @@ local function exec(cmd, cwd)
 
   while proc:running() do
     drain()
-    coroutine.yield(0.02)
+    coroutine.yield(0.1)
   end
   drain()
 
@@ -170,18 +170,32 @@ local function lua_diff(a, b)
   return marks
 end
 
+local function update_doc_marks(doc, marks)
+  local old_marks = doc_marks[doc] or {}
+  local changed = false
+  for k, v in pairs(marks) do
+    if old_marks[k] ~= v then changed = true; break end
+  end
+  if not changed then
+    for k, v in pairs(old_marks) do
+      if marks[k] ~= v then changed = true; break end
+    end
+  end
+  doc_marks[doc] = marks
+  return changed
+end
+
 local function recompute_marks(doc)
   local path = doc.filename and system.absolute_path(doc.filename)
-  if not path then doc_marks[doc] = {}; return end
+  if not path then return update_doc_marks(doc, {}) end
 
   local hl = head_lines[path]
-  if hl == nil or hl == NOGIT then doc_marks[doc] = {}; return end
+  if hl == nil or hl == NOGIT then return update_doc_marks(doc, {}) end
 
   if hl == false then
     local marks = {}
     for i = 1, #doc.lines do marks[i] = "add" end
-    doc_marks[doc] = marks
-    return
+    return update_doc_marks(doc, marks)
   end
 
   local dl = {}
@@ -195,7 +209,7 @@ local function recompute_marks(doc)
   if full_line_count > #dl and #hl < full_line_count then
     marks[full_line_count] = "add"
   end
-  doc_marks[doc] = marks
+  return update_doc_marks(doc, marks)
 end
 
 local function on_doc_changed(doc)
@@ -204,8 +218,9 @@ local function on_doc_changed(doc)
   if not path then return end
   local hl = head_lines[path]
   if hl == nil or hl == NOGIT then return end
-  recompute_marks(doc)
-  core.redraw = true
+  if recompute_marks(doc) then
+    core.redraw = true
+  end
 end
 
 local orig_raw_insert = Doc.raw_insert
@@ -222,7 +237,7 @@ end
 
 core.add_thread(function()
   while true do
-    coroutine.yield(2)
+    coroutine.yield(5)
 
     local ok, err = xpcall(function()
       local now = system.get_time()
@@ -239,8 +254,9 @@ core.add_thread(function()
                          or now - head_fetched[path] > HEAD_TTL
               if stale then
                 fetch_head(path)
-                recompute_marks(doc)
-                core.redraw = true
+                if recompute_marks(doc) then
+                  core.redraw = true
+                end
               end
             end
           end

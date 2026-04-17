@@ -92,15 +92,25 @@ local ITEM_H    = math.floor(21 * SCALE)
 local HEADER_H  = math.floor(40 * SCALE)
 local TARGET_W  = math.floor(260 * SCALE)
 
+local function compare_lists(a, b)
+  if #a ~= #b then return false end
+  for i, v in ipairs(a) do
+    if b[i].status ~= v.status or b[i].path ~= v.path then return false end
+  end
+  return true
+end
+
 local function do_git_refresh(self, dir)
   if not dir then return end
   if not system.get_file_info(dir .. PATHSEP .. ".git") then
-    self.branch, self.staged, self.changes, self.untracked = nil, {}, {}, {}
-    core.redraw = true
+    if self.branch ~= nil then
+      self.branch, self.staged, self.changes, self.untracked = nil, {}, {}, {}
+      core.redraw = true
+    end
     return
   end
 
-  self.branch = exec({"git","rev-parse","--abbrev-ref","HEAD"}, dir):match("[^\n]*")
+  local new_branch = exec({"git","rev-parse","--abbrev-ref","HEAD"}, dir):match("[^\n]*")
 
   local staged, changes, untracked = {}, {}, {}
   local out = exec({"git","status","--porcelain"}, dir)
@@ -114,8 +124,17 @@ local function do_git_refresh(self, dir)
     if x == "?" and y == "?" then table.insert(untracked, {status="?",path=path}) end
   end
 
+  local needs_redraw = (self.branch ~= new_branch)
+    or not compare_lists(self.staged or {}, staged)
+    or not compare_lists(self.changes or {}, changes)
+    or not compare_lists(self.untracked or {}, untracked)
+
+  self.branch = new_branch
   self.staged, self.changes, self.untracked = staged, changes, untracked
-  core.redraw = true
+
+  if needs_redraw then
+    core.redraw = true
+  end
 end
 
 function SCMView:_refresh()
@@ -143,7 +162,7 @@ function SCMView:new()
 
   core.add_thread(function()
     while true do
-      coroutine.yield(self.visible and 5 or 30)
+      coroutine.yield(self.visible and 5 or 60)
       self:_refresh()
     end
   end)

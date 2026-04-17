@@ -32,7 +32,7 @@ style.gitstatus_addition = {common.color "#587c0c"}
 style.gitstatus_modification = {common.color "#0c7d9d"}
 style.gitstatus_deletion = {common.color "#94151b"}
 
-local scan_rate = config.project_scan_rate or 5
+local scan_rate = config.project_scan_rate or 10
 local cached_color_for_item = {}
 
 local function uc(n) return utf8.char(n) end
@@ -117,52 +117,91 @@ local function exec(cmd, cwd)
 end
 
 
-core.add_thread(function()
-  while true do
-    if system.get_file_info(core.project_dir .. PATHSEP .. ".git") then
-      git.branch = exec({"git", "rev-parse", "--abbrev-ref", "HEAD"}, core.project_dir):match("[^\n]*")
+local function window_focused()
+  if system.window_has_focus then
+    local ok, focused = pcall(system.window_has_focus)
+    if ok then return focused end
+  end
+  return true
+end
 
-      local inserts = 0
-      local deletes = 0
+local function scan()
+  if not window_focused() then return end
 
-      local diff = exec({"git", "diff", "--numstat"}, core.project_dir)
-      if
-        config.plugins.gitstatus.recurse_submodules
-        and
-        system.get_file_info(core.project_dir .. PATHSEP .. ".gitmodules")
-      then
-        local diff2 = exec({"git", "submodule", "foreach", "git diff --numstat"}, core.project_dir)
-        diff = diff .. diff2
-      end
+  local changed = false
 
-      cached_color_for_item = {}
+  if system.get_file_info(core.project_dir .. PATHSEP .. ".git") then
+    local new_branch = exec({"git", "rev-parse", "--abbrev-ref", "HEAD"}, core.project_dir):match("[^\n]*")
+    if git.branch ~= new_branch then
+      git.branch = new_branch
+      changed = true
+    end
 
-      local folder = core.project_dir
-      for line in string.gmatch(diff, "[^\n]+") do
-        local submodule = line:match("^Entering '(.+)'$")
-        if submodule then
-          folder = core.project_dir .. PATHSEP .. submodule
-        else
-          local ins, dels, path = line:match("(%d+)%s+(%d+)%s+(.+)")
-          if path then
-            inserts = inserts + (tonumber(ins) or 0)
-            deletes = deletes + (tonumber(dels) or 0)
-            local abs_path = folder .. PATHSEP .. path
-            while abs_path do
-              cached_color_for_item[abs_path] = style.gitstatus_modification
-              abs_path = common.dirname(abs_path)
-            end
+    local inserts = 0
+    local deletes = 0
+
+    local diff = exec({"git", "diff", "--numstat"}, core.project_dir)
+    if
+      config.plugins.gitstatus.recurse_submodules
+      and
+      system.get_file_info(core.project_dir .. PATHSEP .. ".gitmodules")
+    then
+      local diff2 = exec({"git", "submodule", "foreach", "git diff --numstat"}, core.project_dir)
+      diff = diff .. diff2
+    end
+
+    local new_cached = {}
+    local folder = core.project_dir
+    for line in string.gmatch(diff, "[^\n]+") do
+      local submodule = line:match("^Entering '(.+)'$")
+      if submodule then
+        folder = core.project_dir .. PATHSEP .. submodule
+      else
+        local ins, dels, path = line:match("(%d+)%s+(%d+)%s+(.+)")
+        if path then
+          inserts = inserts + (tonumber(ins) or 0)
+          deletes = deletes + (tonumber(dels) or 0)
+          local abs_path = folder .. PATHSEP .. path
+          while abs_path do
+            new_cached[abs_path] = style.gitstatus_modification
+            abs_path = common.dirname(abs_path)
           end
         end
       end
-
-      git.inserts = inserts
-      git.deletes = deletes
-
-    else
-      git.branch = nil
     end
 
+    if git.inserts ~= inserts or git.deletes ~= deletes then
+      git.inserts = inserts
+      git.deletes = deletes
+      changed = true
+    end
+
+    for k, _ in pairs(new_cached) do
+      if not cached_color_for_item[k] then changed = true; break end
+    end
+    if not changed then
+      for k, _ in pairs(cached_color_for_item) do
+        if not new_cached[k] then changed = true; break end
+      end
+    end
+
+    cached_color_for_item = new_cached
+
+  else
+    if git.branch ~= nil then
+      git.branch = nil
+      changed = true
+    end
+  end
+
+  if changed then
+    core.redraw = true
+  end
+end
+
+core.add_thread(function()
+  while true do
+    scan()
     coroutine.yield(scan_rate)
   end
 end)

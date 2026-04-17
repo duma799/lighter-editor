@@ -122,7 +122,7 @@ local function update_git_branch()
           statusline.git_branch = nil
         end
       end
-      coroutine.yield(5)
+      coroutine.yield(15)
     end
   end)
 end
