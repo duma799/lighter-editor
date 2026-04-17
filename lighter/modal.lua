@@ -259,6 +259,7 @@ local function resolve_key(key)
       local action = chord_map[key]
       if type(action) == "table" then
         table.insert(modal.chord.keys, key)
+        modal.chord.timer = CHORD_TIMEOUT
         return true
       elseif type(action) == "function" then
         action()
@@ -280,6 +281,7 @@ local function resolve_key(key)
   if pending_seq then
     local seq_map = pending_seq
     pending_seq = nil
+    pending_timer = 0
     if seq_map[key] then
       local action = seq_map[key]
       if type(action) == "function" then
@@ -295,11 +297,13 @@ local function resolve_key(key)
   if (key == " " or key == "space") and modal.mode == "normal" then
     modal.chord.active = true
     modal.chord.keys = {}
+    modal.chord.timer = CHORD_TIMEOUT
     return true
   end
 
   if modal.mode == "normal" and normal_sequences[key] then
     pending_seq = normal_sequences[key]
+    pending_timer = CHORD_TIMEOUT
     return true
   end
 
@@ -366,5 +370,27 @@ command.add(nil, {
 keymap.add({
   ["ctrl+["] = "lighter:enter-normal-mode",
 }, true)
+
+core.add_thread(function()
+  local tick = 0.1
+  while true do
+    if pending_seq and pending_timer > 0 then
+      pending_timer = pending_timer - tick
+      if pending_timer <= 0 then
+        pending_seq = nil
+        pending_timer = 0
+      end
+    end
+    if modal.chord.active and modal.chord.timer > 0 then
+      modal.chord.timer = modal.chord.timer - tick
+      if modal.chord.timer <= 0 then
+        modal.chord.active = false
+        modal.chord.keys = {}
+        modal.chord.timer = 0
+      end
+    end
+    coroutine.yield(tick)
+  end
+end)
 
 return modal
